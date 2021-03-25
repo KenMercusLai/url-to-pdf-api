@@ -15,30 +15,34 @@ function getMimeType(opts) {
 
   const type = _.get(opts, 'screenshot.type');
   switch (type) {
-    case 'png': return 'image/png';
-    case 'jpeg': return 'image/jpeg';
-    default: throw new Error(`Unknown screenshot type: ${type}`);
+    case 'png':
+      return 'image/png';
+    case 'jpeg':
+      return 'image/jpeg';
+    default:
+      throw new Error(`Unknown screenshot type: ${type}`);
   }
 }
 
 const getRender = ex.createRoute((req, res) => {
   const opts = getOptsFromQuery(req.query);
 
+  // 这里应该是渲染并返回附件，然后返回给客户端
   assertOptionsAllowed(opts);
-  return renderCore.render(opts)
-    .then((data) => {
-      if (opts.attachmentName) {
-        res.attachment(opts.attachmentName);
-      }
-      res.set('content-type', getMimeType(opts));
-      res.send(data);
-    });
+  return renderCore.render(opts).then((data) => {
+    if (opts.attachmentName) {
+      res.attachment(opts.attachmentName);
+    }
+    res.set('content-type', getMimeType(opts));
+    res.send(data);
+  });
 });
 
 const postRender = ex.createRoute((req, res) => {
   const isBodyJson = req.headers['content-type'].includes('application/json');
   if (isBodyJson) {
-    const hasContent = _.isString(_.get(req.body, 'url')) || _.isString(_.get(req.body, 'html'));
+    const hasContent =
+      _.isString(_.get(req.body, 'url')) || _.isString(_.get(req.body, 'html'));
     if (!hasContent) {
       ex.throwStatus(400, 'Body must contain url or html');
     }
@@ -48,26 +52,28 @@ const postRender = ex.createRoute((req, res) => {
 
   let opts;
   if (isBodyJson) {
-    opts = _.merge({
-      output: 'pdf',
-      screenshot: {
-        type: 'png',
+    opts = _.merge(
+      {
+        output: 'pdf',
+        screenshot: {
+          type: 'png',
+        },
       },
-    }, req.body);
+      req.body
+    );
   } else {
     opts = getOptsFromQuery(req.query);
     opts.html = req.body;
   }
 
   assertOptionsAllowed(opts);
-  return renderCore.render(opts)
-    .then((data) => {
-      if (opts.attachmentName) {
-        res.attachment(opts.attachmentName);
-      }
-      res.set('content-type', getMimeType(opts));
-      res.send(data);
-    });
+  return renderCore.render(opts).then((data) => {
+    if (opts.attachmentName) {
+      res.attachment(opts.attachmentName);
+    }
+    res.set('content-type', getMimeType(opts));
+    res.send(data);
+  });
 });
 
 function isHostMatch(host1, host2) {
@@ -112,11 +118,13 @@ function isUrlAllowed(inputUrl) {
     return isNormalizedMatch(urlPattern, inputUrl);
   });
 
-  const isAllowed = _.some(matchInfos, info => info.match);
+  const isAllowed = _.some(matchInfos, (info) => info.match);
   if (!isAllowed) {
     logger.info('The url was not allowed because:');
     _.forEach(matchInfos, (info) => {
-      logger.info(`${info.part1} !== ${info.part2} (with ${info.type} matching)`);
+      logger.info(
+        `${info.part1} !== ${info.part2} (with ${info.type} matching)`
+      );
     });
   }
 
@@ -124,12 +132,17 @@ function isUrlAllowed(inputUrl) {
 }
 
 function assertOptionsAllowed(opts) {
-  const isDisallowedHtmlInput = !_.isString(opts.url) && config.DISABLE_HTML_INPUT;
+  const isDisallowedHtmlInput =
+    !_.isString(opts.url) && config.DISABLE_HTML_INPUT;
   if (isDisallowedHtmlInput) {
     ex.throwStatus(403, 'Rendering HTML input is disabled.');
   }
 
-  if (_.isString(opts.url) && config.ALLOW_URLS.length > 0 && !isUrlAllowed(opts.url)) {
+  if (
+    _.isString(opts.url) &&
+    config.ALLOW_URLS.length > 0 &&
+    !isUrlAllowed(opts.url)
+  ) {
     ex.throwStatus(403, 'Url not allowed.');
   }
 }

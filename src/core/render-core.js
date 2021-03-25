@@ -2,7 +2,7 @@ const puppeteer = require('puppeteer');
 const _ = require('lodash');
 const config = require('../config');
 const logger = require('../util/logger')(__filename);
-
+const fs = require('fs');
 
 async function createBrowser(opts) {
   const browserOpts = {
@@ -39,32 +39,38 @@ async function getFullPageHeight(page) {
 }
 
 async function render(_opts = {}) {
-  const opts = _.merge({
-    cookies: [],
-    scrollPage: false,
-    emulateScreenMedia: true,
-    ignoreHttpsErrors: false,
-    html: null,
-    viewport: {
-      width: 1600,
-      height: 1200,
+  const opts = _.merge(
+    {
+      cookies: [],
+      scrollPage: false,
+      emulateScreenMedia: true,
+      ignoreHttpsErrors: false,
+      html: null,
+      viewport: {
+        width: 1600,
+        height: 1200,
+      },
+      goto: {
+        waitUntil: 'networkidle0',
+      },
+      output: 'pdf',
+      pdf: {
+        format: 'A4',
+        printBackground: true,
+      },
+      screenshot: {
+        type: 'png',
+        fullPage: true,
+      },
+      failEarly: false,
     },
-    goto: {
-      waitUntil: 'networkidle0',
-    },
-    output: 'pdf',
-    pdf: {
-      format: 'A4',
-      printBackground: true,
-    },
-    screenshot: {
-      type: 'png',
-      fullPage: true,
-    },
-    failEarly: false,
-  }, _opts);
+    _opts
+  );
 
-  if ((_.get(_opts, 'pdf.width') && _.get(_opts, 'pdf.height')) || _.get(opts, 'pdf.fullPage')) {
+  if (
+    (_.get(_opts, 'pdf.width') && _.get(_opts, 'pdf.height')) ||
+    _.get(opts, 'pdf.fullPage')
+  ) {
     // pdf.format always overrides width and height, so we must delete it
     // when user explicitly wants to set width and height
     opts.pdf.format = undefined;
@@ -82,7 +88,6 @@ async function render(_opts = {}) {
     logger.error(err.stack);
     browser.close();
   });
-
 
   this.failedResponses = [];
   page.on('requestfailed', (request) => {
@@ -145,7 +150,9 @@ async function render(_opts = {}) {
       });
 
       if (opts.failEarly === 'all') {
-        const err = new Error(`${this.failedResponses.length} requests have failed. See server log for more details.`);
+        const err = new Error(
+          `${this.failedResponses.length} requests have failed. See server log for more details.`
+        );
         err.status = 412;
         throw err;
       }
@@ -179,7 +186,10 @@ async function render(_opts = {}) {
       // This is done because puppeteer throws an error if fullPage and clip is used at the same
       // time even though clip is just empty object {}
       const screenshotOpts = _.cloneDeep(_.omit(opts.screenshot, ['clip']));
-      const clipContainsSomething = _.some(opts.screenshot.clip, val => !_.isUndefined(val));
+      const clipContainsSomething = _.some(
+        opts.screenshot.clip,
+        (val) => !_.isUndefined(val)
+      );
       if (clipContainsSomething) {
         screenshotOpts.clip = opts.screenshot.clip;
       }
@@ -202,7 +212,8 @@ async function render(_opts = {}) {
       await browser.close();
     }
   }
-
+  fs.writeFileSync('test.pdf', data);
+  logger.info(data);
   return data;
 }
 
@@ -248,4 +259,3 @@ function logOpts(opts) {
 module.exports = {
   render,
 };
-
