@@ -212,9 +212,8 @@ async function render(_opts = {}) {
       await browser.close();
     }
   }
-  const timeStamp = Math.floor(Date.now());
-  fs.writeFileSync(cyrb53(timeStamp).toString() + '.pdf', data);
-  logger.info(data);
+  let timeStamp = Math.floor(Date.now());
+  fs.writeFileSync(cyrb53(timeStamp.toString()).toString() + '.pdf', data);
   return data;
 }
 
