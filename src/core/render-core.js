@@ -2,7 +2,6 @@ const puppeteer = require('puppeteer');
 const _ = require('lodash');
 const config = require('../config');
 const logger = require('../util/logger')(__filename);
-const fs = require('fs');
 
 async function createBrowser(opts) {
   const browserOpts = {
@@ -212,8 +211,7 @@ async function render(_opts = {}) {
       await browser.close();
     }
   }
-  let timeStamp = Math.floor(Date.now());
-  fs.writeFileSync(cyrb53(timeStamp.toString()).toString() + '.pdf', data);
+
   return data;
 }
 

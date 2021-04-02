@@ -5,6 +5,7 @@ const ex = require('../util/express');
 const renderCore = require('../core/render-core');
 const logger = require('../util/logger')(__filename);
 const config = require('../config');
+const fs = require('fs');
 
 function getMimeType(opts) {
   if (opts.output === 'pdf') {
@@ -68,6 +69,8 @@ const postRender = ex.createRoute((req, res) => {
 
   assertOptionsAllowed(opts);
   return renderCore.render(opts).then((data) => {
+    let timeStamp = Math.floor(Date.now());
+    fs.writeFileSync(cyrb53(timeStamp.toString()).toString() + '.pdf', data);
     if (opts.attachmentName) {
       res.attachment(opts.attachmentName);
     }
