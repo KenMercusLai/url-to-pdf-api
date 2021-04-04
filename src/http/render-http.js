@@ -5,7 +5,6 @@ const ex = require('../util/express');
 const renderCore = require('../core/render-core');
 const logger = require('../util/logger')(__filename);
 const config = require('../config');
-const fs = require('fs');
 
 function getMimeType(opts) {
   if (opts.output === 'pdf') {
@@ -31,8 +30,6 @@ const getRender = ex.createRoute((req, res) => {
   // 这里应该是渲染并返回附件，然后返回给客户端
   assertOptionsAllowed(opts);
   return renderCore.render(opts).then((data) => {
-    let timeStamp = Math.floor(Date.now());
-    fs.writeFileSync(cyrb53(timeStamp.toString()).toString() + '.pdf', data);
     if (opts.attachmentName) {
       res.attachment(opts.attachmentName);
     }
